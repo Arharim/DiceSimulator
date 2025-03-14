@@ -1,6 +1,6 @@
-﻿namespace DiceSimulatorWPF
+﻿namespace DiceSimulatorWPF.Utility
 {
-    class TheoreticalResult
+    public class TheoreticalResult
     {
         public double Value { get; }
         public double Variance { get; }
