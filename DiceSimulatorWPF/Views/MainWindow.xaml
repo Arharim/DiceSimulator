@@ -1,0 +1,130 @@
+﻿<Window x:Class="DiceSimulatorWPF.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:lvc="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
+        xmlns:local="clr-namespace:DiceSimulatorWPF"
+        mc:Ignorable="d"
+        Title="Симулятор Дайсов" 
+        Height="655" 
+        Width="1100" 
+        MinHeight="655"
+        MinWidth="1100">
+
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Input Section -->
+        <GroupBox Header="Параметры ввода" Grid.Row="0" Margin="0,0,0,10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Margin="5">
+                    <TextBlock Text="Введите дайсы (например: 1d6 2d8 1d4):" FontWeight="Bold"/>
+                    <TextBox x:Name="DiceInput" Width="150" Margin="0,5,0,0"/>
+                    <TextBlock Text="Количество бросков:" FontWeight="Bold" Margin="0,10,0,0"/>
+                    <TextBox x:Name="RollsInput" Width="150" Margin="0,5,0,0"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="5">
+                    <Button x:Name="RollDiceButton" Content="Бросить дайсы" Click="RollDice_Click" Width="120" Height="40" 
+                        FontWeight="Bold" Background="LightBlue" Margin="5"/>
+                    <ToggleButton x:Name="ToggleViewButton" Click="ToggleView_Click" Width="120" Height="40"
+                                  FontWeight="Bold" Background="LightBlue" Margin="5"                                  >
+                        <ToggleButton.Style>
+                            <Style TargetType="ToggleButton">
+                                <Setter Property="Content" Value="График"/>
+                                <Style.Triggers>
+                                    <Trigger Property="IsChecked" Value="True">
+                                        <Setter Property="Content" Value="Текст"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ToggleButton.Style>
+                    </ToggleButton>
+                </StackPanel>
+            </Grid>
+        </GroupBox>
+
+        <!-- Results Section -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <GroupBox Header="Результаты симуляции" Grid.Column="0" Margin="5">
+                 <Grid>
+                    <ScrollViewer x:Name="ResultsSimulationTextView" VerticalScrollBarVisibility="Auto">
+                        <RichTextBox x:Name="ResultsSimulationText" IsReadOnly="True" FontFamily="Consolas"/>
+                    </ScrollViewer>
+                    <!-- Simulation Chart -->
+                    <lvc:CartesianChart x:Name="SimulationChart" Margin="5" Visibility="Collapsed" LegendLocation="Top">
+                        <lvc:CartesianChart.Series>
+                            <lvc:ColumnSeries 
+                                Title="Частота выпадения" 
+                                Values="{Binding SimulationValues}"
+                                Fill="#FF4CAF50"
+                                Stroke="#FF388E3C"
+                                StrokeThickness="2"
+                                DataLabels="True" 
+                                />
+                        </lvc:CartesianChart.Series>
+                        <lvc:CartesianChart.AxisX>
+                            <lvc:Axis Title="Сумма бросков"
+                                      FontSize="14"
+                                      Foreground="Black"
+                                      Labels="{Binding SimulationLabels}"/>
+                        </lvc:CartesianChart.AxisX>
+                        <lvc:CartesianChart.AxisY>
+                            <lvc:Axis Title="Количество выпадений"
+                                      FontSize="14"
+                                      Foreground="Black"
+                                      MinValue="0"/>
+                        </lvc:CartesianChart.AxisY>
+                    </lvc:CartesianChart>
+                </Grid>
+            </GroupBox>
+ 
+            <GroupBox Header="Теоретические расчеты" Grid.Column="1" Margin="5">
+                <Grid>
+                    <ScrollViewer x:Name="ResultsTheoryTextView" VerticalScrollBarVisibility="Auto">
+                        <RichTextBox x:Name="ResultsTheoryText" IsReadOnly="True" FontFamily="Consolas"/>
+                    </ScrollViewer>
+                    <!-- Theory Chart -->
+                    <lvc:CartesianChart x:Name="TheoryChart" Margin="5" Visibility="Collapsed" LegendLocation="Top">
+                        <lvc:CartesianChart.Series>
+                            <lvc:ColumnSeries Title="Теоретическая вероятность"
+                                              Values="{Binding TheoryValues}" 
+                                              Fill="#FF2196F3" 
+                                              Stroke="#FF1976D2" 
+                                              StrokeThickness="2" 
+                                              DataLabels="True" 
+                                              />
+                        </lvc:CartesianChart.Series>
+                        <lvc:CartesianChart.AxisX>
+                            <lvc:Axis Title="Сумма бросков"
+                                      FontSize="14"
+                                      Foreground="Black"
+                                      Labels="{Binding TheoryLabels}"/>
+                        </lvc:CartesianChart.AxisX>
+                        <lvc:CartesianChart.AxisY>
+                            <lvc:Axis Title="Вероятность"
+                                      FontSize="14"
+                                      Foreground="Black"
+                                      MinValue="0"
+                                      LabelFormatter="{Binding ProbabilityFormatter}"/>
+                        </lvc:CartesianChart.AxisY>
+                    </lvc:CartesianChart>
+                </Grid>
+            </GroupBox>
+        </Grid>
+    </Grid>
+</Window>
