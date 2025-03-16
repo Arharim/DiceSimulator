@@ -6,6 +6,7 @@
         xmlns:lvc="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
         xmlns:vm="clr-namespace:DiceSimulatorWPF.ViewModels"
         xmlns:util="clr-namespace:DiceSimulatorWPF.Utility"
+        xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
         mc:Ignorable="d"
         Title="Симулятор Дайсов" 
         Height="655" 
@@ -18,6 +19,7 @@
     <Window.Resources>
         <util:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
         <util:BoolToTextConverter x:Key="BoolToTextConverter"/>
+        <util:RichTextContentToFlowDocumentConverter x:Key="RichTextConverter"/>
     </Window.Resources>
     <Grid Margin="10">
         <Grid.RowDefinitions>
@@ -62,7 +64,16 @@
                  <Grid>
                     <ScrollViewer x:Name="ResultsSimulationTextView" VerticalScrollBarVisibility="Auto" 
                                   Visibility="{Binding IsChartView, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Inverse}">
-                        <TextBlock Text="{Binding SimulationText}" TextWrapping="Wrap"/>
+                        <!-- <TextBlock Text="{Binding SimulationText}" TextWrapping="Wrap"/> -->
+                        <RichTextBox x:Name="ResultsSimulationRichText"
+                                     IsReadOnly="True"
+                                     FontFamily="Consolas"
+                                     BorderThickness="0"
+                                     >
+                            <i:Interaction.Behaviors>
+                                <util:RichTextBoxBindingBehavior DocumentContent="{Binding SimulationContent, Converter={StaticResource RichTextConverter}}"/>
+                            </i:Interaction.Behaviors>
+                        </RichTextBox>
                     </ScrollViewer>
                     <!-- Simulation Chart -->
                     <lvc:CartesianChart x:Name="SimulationChart" Margin="5" 
@@ -86,7 +97,16 @@
                 <Grid>
                     <ScrollViewer VerticalScrollBarVisibility="Auto" 
                                   Visibility="{Binding IsChartView, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Inverse}">
-                        <TextBlock Text="{Binding TheoryText}" TextWrapping="Wrap"/>
+                        <!--   <TextBlock Text="{Binding TheoryText}" TextWrapping="Wrap"/>-->
+                        <RichTextBox x:Name="ResultsTheoryRichText" 
+                                     IsReadOnly="True" 
+                                     FontFamily="Consolas" 
+                                     BorderThickness="0" 
+                                     >
+                            <i:Interaction.Behaviors>
+                                <util:RichTextBoxBindingBehavior DocumentContent="{Binding TheoryContent, Converter={StaticResource RichTextConverter}}"/>
+                            </i:Interaction.Behaviors>
+                        </RichTextBox>
                     </ScrollViewer>
                     <!-- Theory Chart -->
                     <lvc:CartesianChart x:Name="TheoryChart" Margin="5" 

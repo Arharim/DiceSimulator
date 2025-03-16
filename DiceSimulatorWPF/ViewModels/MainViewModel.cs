@@ -3,7 +3,6 @@ using DiceSimulatorWPF.Utility;
 using LiveCharts;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using System.Text;
 using System.Windows;
 using System.Windows.Input;
 
@@ -19,6 +18,9 @@ namespace DiceSimulatorWPF.ViewModels
         private Dictionary<int, int> _lastSimulationFrequency;
         private double _lastEmpiricalValue;
         private TheoreticalResult _lastTheoreticalResult;
+
+        private RichTextContent _simulationContent = new RichTextContent();
+        private RichTextContent _theoryContent = new RichTextContent();
 
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -47,7 +49,7 @@ namespace DiceSimulatorWPF.ViewModels
             set
             {
                 _isChartView = value;
-                UpdateDispaly();
+                UpdateDisplay();
                 OnPropertyChanged();
             }
         }
@@ -65,8 +67,26 @@ namespace DiceSimulatorWPF.ViewModels
         public ChartValues<double> TheoryValues { get; } = new ChartValues<double>();
         public List<string> SimulationLabels { get; set; } = new List<string>();
         public List<string> TheoryLabels { get; set; } = new List<string>();
-        public string SimulationText { get; private set; } = "Нажмите 'Бросить дайсы' для начала симуляции.";
-        public string TheoryText { get; private set; } = "";
+
+        public RichTextContent SimulationContent
+        {
+            get => _simulationContent;
+            set
+            {
+                _simulationContent = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public RichTextContent TheoryContent
+        {
+            get => _theoryContent;
+            set
+            {
+                _theoryContent = value;
+                OnPropertyChanged();
+            }
+        }
 
         public ICommand RollDiceCommand { get; }
         public ICommand ToggleViewCommand { get; }
@@ -78,6 +98,7 @@ namespace DiceSimulatorWPF.ViewModels
                 () => !IsProcessing
             );
             ToggleViewCommand = new RelayCommand(() => IsChartView = !IsChartView);
+            UpdateDisplay();
         }
 
         private async Task RollDiceAsync()
@@ -101,18 +122,28 @@ namespace DiceSimulatorWPF.ViewModels
             _lastEmpiricalValue = empiricalValue;
             _lastTheoreticalResult = theroeticalResult;
 
-            UpdateDispaly();
+            UpdateDisplay();
             IsProcessing = false;
         }
 
-        private void UpdateDispaly()
+        private void UpdateDisplay()
         {
             if (_lastSimulationFrequency == null || _lastTheoreticalResult == null)
             {
                 if (!IsChartView)
                 {
-                    SimulationText = "Нажмите 'Бросить дайсы' для начала симуляции.";
-                    TheoryText = "";
+                    SimulationContent = new RichTextContent
+                    {
+                        Sections =
+                        {
+                            new RichTextSection
+                            {
+                                Text = "Нажмите 'Бросить дайсы' для начала симуляции.",
+                                Color = "#808080"
+                            }
+                        }
+                    };
+                    TheoryContent = new RichTextContent();
                 }
                 SimulationValues.Clear();
                 TheoryValues.Clear();
@@ -141,40 +172,154 @@ namespace DiceSimulatorWPF.ViewModels
             }
             else
             {
-                SimulationText = BuildSimulationText(_lastSimulationFrequency, _lastEmpiricalValue, int.Parse(RollsInput));
-                TheoryText = BuildTheoryText(_lastTheoreticalResult);
+                SimulationContent = BuildSimulationRichText(
+                    _lastSimulationFrequency,
+                    _lastEmpiricalValue,
+                    int.Parse(RollsInput)
+                );
+                TheoryContent = BuildTheoryRichText(_lastTheoreticalResult);
             }
 
-            OnPropertyChanged(nameof(SimulationText));
-            OnPropertyChanged(nameof(TheoryText));
+            OnPropertyChanged(nameof(SimulationContent));
+            OnPropertyChanged(nameof(TheoryContent));
             OnPropertyChanged(nameof(SimulationValues));
             OnPropertyChanged(nameof(TheoryValues));
             OnPropertyChanged(nameof(SimulationLabels));
             OnPropertyChanged(nameof(TheoryLabels));
         }
 
-        private string BuildSimulationText(Dictionary<int, int> frequency, double empiricalValue, int numThrows)
+        private RichTextContent BuildSimulationRichText(
+            Dictionary<int, int> frequency,
+            double empiricalValue,
+            int numThrows
+        )
         {
-            var sb = new StringBuilder();
-            sb.AppendLine($"🎲 Симуляция {numThrows} бросков");
-            sb.AppendLine($"Средняя сумма: {empiricalValue:F4}");
+            var content = new RichTextContent();
+            content.Sections.Add(
+                new RichTextSection
+                {
+                    Text = $"🎲 Симуляция {numThrows} бросков",
+                    IsBold = true,
+                    Color = "#006400",
+                    IsNewParagraph = true
+                }
+            );
+            content.Sections.Add(
+                new RichTextSection
+                {
+                    Text = $"Средняя сумма: {empiricalValue:F4}",
+                    Color = "#0000FF",
+                    IsNewParagraph = true
+                }
+            );
+            content.Sections.Add(
+                new RichTextSection
+                {
+                    Text = "Частоты:\n",
+                    IsBold = true,
+                    IsNewParagraph = true
+                }
+            );
+
             foreach (var pair in frequency.OrderBy(p => p.Key))
-                sb.AppendLine($"  Сумма {pair.Key}: {pair.Value} раз ({pair.Value / (double)numThrows:F4})");
-            return sb.ToString();
+            {
+                double probability = pair.Value / (double)numThrows;
+                content.Sections.Add(
+                    new RichTextSection
+                    {
+                        Text = $"  Сумма {pair.Key, -3}: ",
+                        Color = "#000000",
+                        IsNewParagraph = true
+                    }
+                );
+                content.Sections.Add(
+                    new RichTextSection
+                    {
+                        Text = $"{pair.Value, 5} раз ",
+                        Color = "#008000",
+                        IsBold = true,
+                        IsNewParagraph = false
+                    }
+                );
+                content.Sections.Add(
+                    new RichTextSection
+                    {
+                        Text = $"({probability:F4})",
+                        Color = "#00008B",
+                        IsNewParagraph = false
+                    }
+                );
+            }
+            return content;
         }
 
-        private string BuildTheoryText(TheoreticalResult theo)
+        private RichTextContent BuildTheoryRichText(TheoreticalResult theo)
         {
-            var sb = new StringBuilder();
-            sb.AppendLine("📌 Теоретические расчёты");
-            sb.AppendLine($"  Мат. ожидание (M): {theo.Value:F4}");
-            sb.AppendLine($"  Дисперсия (D): {theo.Variance:F4}");
-            sb.AppendLine($"  Отклонение (σ): {theo.StdDev:F4}");
-            sb.AppendLine($"  Сумма вероятностей: {theo.Probabilities.Values.Sum():F4}");
-            sb.AppendLine("Вероятности:");
+            var content = new RichTextContent();
+            content.Sections.Add(
+                new RichTextSection
+                {
+                    Text = "📌 Теоретические расчёты",
+                    IsBold = true,
+                    Color = "#00008B",
+                    IsNewParagraph = true
+                }
+            );
+            content.Sections.Add(
+                new RichTextSection
+                {
+                    Text = $"  Мат. ожидание (M): {theo.Value:F4}",
+                    Color = "#0000FF",
+                    IsNewParagraph = true
+                }
+            );
+            content.Sections.Add(
+                new RichTextSection
+                {
+                    Text = $"  Дисперсия (D): {theo.Variance:F4}",
+                    Color = "#0000FF",
+                    IsNewParagraph = true
+                }
+            );
+            content.Sections.Add(
+                new RichTextSection
+                {
+                    Text = $"  Отклонение (σ): {theo.StdDev:F4}",
+                    Color = "#0000FF",
+                    IsNewParagraph = true
+                }
+            );
+            content.Sections.Add(
+                new RichTextSection
+                {
+                    Text = $"  Сумма вероятностей: {theo.Probabilities.Values.Sum():F4}",
+                    Color = "#0000FF",
+                    IsNewParagraph = true
+                }
+            );
+            content.Sections.Add(new RichTextSection { Text = "Вероятности:", IsBold = true });
+
             foreach (var pair in theo.Probabilities.OrderBy(p => p.Key))
-                sb.AppendLine($"  Сумма {pair.Key}: {pair.Value:F8}");
-            return sb.ToString();
+            {
+                content.Sections.Add(
+                    new RichTextSection
+                    {
+                        Text = $"  Сумма {pair.Key, -3}: ",
+                        Color = "#000000",
+                        IsNewParagraph = true
+                    }
+                );
+                content.Sections.Add(
+                    new RichTextSection
+                    {
+                        Text = $"{pair.Value:F8}",
+                        Color = "#00008B",
+                        IsBold = true,
+                        IsNewParagraph = false
+                    }
+                );
+            }
+            return content;
         }
 
         private bool ValidateInputs(out string errorMessage)
