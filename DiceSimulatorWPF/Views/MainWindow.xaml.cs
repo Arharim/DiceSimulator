@@ -1,5 +1,5 @@
-﻿using DiceSimulatorWPF.ViewModels;
-using System.Windows;
+﻿using System.Windows;
+using DiceSimulatorWPF.ViewModels;
 
 namespace DiceSimulatorWPF.Views
 {

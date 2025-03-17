@@ -7,12 +7,14 @@
         xmlns:vm="clr-namespace:DiceSimulatorWPF.ViewModels"
         xmlns:util="clr-namespace:DiceSimulatorWPF.Utility"
         xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         mc:Ignorable="d"
         Title="Симулятор Дайсов" 
         Height="655" 
         Width="1100" 
         MinHeight="655"
-        MinWidth="1100">
+        MinWidth="1100"
+        Icon="pack://application:,,,/Resources/dice_d20_icon_.ico">
     <Window.DataContext>
         <vm:MainViewModel/>
     </Window.DataContext>
@@ -21,110 +23,112 @@
         <util:BoolToTextConverter x:Key="BoolToTextConverter"/>
         <util:RichTextContentToFlowDocumentConverter x:Key="RichTextConverter"/>
     </Window.Resources>
-    <Grid Margin="10">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
+    
+    <materialDesign:Card Margin="16" Padding="16">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
 
-        <!-- Input Section -->
-        <GroupBox Header="Параметры ввода" Grid.Row="0" Margin="0,0,0,10">
-            <Grid>
+            <!-- Input Section -->
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                <materialDesign:Card Padding="8" Margin="0,0,8,0">
+                    <TextBox materialDesign:HintAssist.Hint="Дайсы (e.g., 1d6 2d8 1d4)"
+                             Text="{Binding DiceInput}"
+                             Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                             Width="200"/>
+                </materialDesign:Card>
+                <materialDesign:Card Padding="8" Margin="0,0,8,0">
+                    <TextBox materialDesign:HintAssist.Hint="Количество бросков"
+                             Text="{Binding RollsInput}"
+                             Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                             Width="150"/>
+                </materialDesign:Card>
+                <Button Content="Бросить дайсы"
+                        Command="{Binding RollDiceCommand}"
+                        Style="{StaticResource MaterialDesignRaisedButton}"
+                        Margin="0,0,8,0"
+                        IsEnabled="{Binding IsProcessing, Converter={StaticResource BoolToTextConverter}}"/>
+                <ToggleButton Content="🔄"
+                              IsChecked="{Binding IsChartView, Mode=TwoWay}"
+                              ToolTip="Переключить вид (Текст/График)"
+                              Style="{StaticResource MaterialDesignActionToggleButton}"/>
+            </StackPanel>
+
+            <!-- Results Section -->
+            <Grid Grid.Row="1">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
-                <StackPanel Grid.Column="0" Margin="5">
-                    <TextBlock Text="Введите дайсы (например: 1d6 2d8 1d4):" FontWeight="Bold"/>
-                    <TextBox Text="{Binding DiceInput, UpdateSourceTrigger=PropertyChanged}" Width="150" Margin="0,5,0,0"/>
-                    <TextBlock Text="Количество бросков:" FontWeight="Bold" Margin="0,10,0,0"/>
-                    <TextBox Text="{Binding RollsInput, UpdateSourceTrigger=PropertyChanged}" Width="150" Margin="0,5,0,0"/>
-                </StackPanel>
+                <!-- Simulation Results -->
+                <GroupBox Header="Результаты симуляции" Grid.Column="0" Margin="5">
+                     <Grid>
+                        <ScrollViewer x:Name="ResultsSimulationTextView" VerticalScrollBarVisibility="Auto" 
+                                      Visibility="{Binding IsChartView, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Inverse}">
+                            <RichTextBox x:Name="ResultsSimulationRichText"
+                                         IsReadOnly="True"
+                                         FontFamily="Roboto"
+                                         BorderThickness="0"
+                                         >
+                                <i:Interaction.Behaviors>
+                                    <util:RichTextBoxBindingBehavior DocumentContent="{Binding SimulationContent, Converter={StaticResource RichTextConverter}}"/>
+                                </i:Interaction.Behaviors>
+                            </RichTextBox>
+                        </ScrollViewer>
+                        <!-- Simulation Chart -->
+                        <lvc:CartesianChart x:Name="SimulationChart" Margin="5" 
+                                           Visibility="{Binding IsChartView, Converter={StaticResource BoolToVisibilityConverter}}"
+                                           LegendLocation="Top">
+                            <lvc:CartesianChart.Series>
+                                <lvc:ColumnSeries Title="Частота выпадения" Values="{Binding SimulationValues}" 
+                                                 Fill="#FF4CAF50" Stroke="#FF388E3C" StrokeThickness="2"/>
+                            </lvc:CartesianChart.Series>
+                            <lvc:CartesianChart.AxisX>
+                                <lvc:Axis Title="Сумма бросков" Labels="{Binding SimulationLabels}"/>
+                            </lvc:CartesianChart.AxisX>
+                            <lvc:CartesianChart.AxisY>
+                                <lvc:Axis Title="Количество" MinValue="0"/>
+                            </lvc:CartesianChart.AxisY>
+                        </lvc:CartesianChart>
+                    </Grid>
+                </GroupBox>
 
-                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="5">
-                    <Button Content="{Binding IsProcessing, Converter={StaticResource BoolToTextConverter}}" 
-                            Command="{Binding RollDiceCommand}" 
-                            Width="120" Height="40" FontWeight="Bold" Background="LightBlue" Margin="5"/>
-                    <ToggleButton Content="Переключить вид" 
-                              IsChecked="{Binding IsChartView, Mode=TwoWay}" 
-                              Width="120" Height="40" FontWeight="Bold" Background="LightBlue" Margin="5"/>
-                </StackPanel>
+                <!-- Theoretical Results -->
+                <GroupBox Header="Теоретические расчеты" Grid.Column="1" Margin="5">
+                    <Grid>
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" 
+                                      Visibility="{Binding IsChartView, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Inverse}">
+                            <RichTextBox x:Name="ResultsTheoryRichText" 
+                                         IsReadOnly="True" 
+                                         FontFamily="Roboto" 
+                                         BorderThickness="0" 
+                                         >
+                                <i:Interaction.Behaviors>
+                                    <util:RichTextBoxBindingBehavior DocumentContent="{Binding TheoryContent, Converter={StaticResource RichTextConverter}}"/>
+                                </i:Interaction.Behaviors>
+                            </RichTextBox>
+                        </ScrollViewer>
+                        <!-- Theory Chart -->
+                        <lvc:CartesianChart x:Name="TheoryChart" Margin="5" 
+                                           Visibility="{Binding IsChartView, Converter={StaticResource BoolToVisibilityConverter}}"
+                                           LegendLocation="Top">
+                            <lvc:CartesianChart.Series>
+                                <lvc:ColumnSeries Title="Теоретическая вероятность" Values="{Binding TheoryValues}" 
+                                                 Fill="#FF2196F3" Stroke="#FF1976D2" StrokeThickness="2"/>
+                            </lvc:CartesianChart.Series>
+                            <lvc:CartesianChart.AxisX>
+                                <lvc:Axis Title="Сумма бросков" Labels="{Binding TheoryLabels}"/>
+                            </lvc:CartesianChart.AxisX>
+                            <lvc:CartesianChart.AxisY>
+                                <lvc:Axis Title="Вероятность" MinValue="0"/>
+                            </lvc:CartesianChart.AxisY>
+                        </lvc:CartesianChart>
+                    </Grid>
+                </GroupBox>
             </Grid>
-        </GroupBox>
-
-        <!-- Results Section -->
-        <Grid Grid.Row="1">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
-
-            <GroupBox Header="Результаты симуляции" Grid.Column="0" Margin="5">
-                 <Grid>
-                    <ScrollViewer x:Name="ResultsSimulationTextView" VerticalScrollBarVisibility="Auto" 
-                                  Visibility="{Binding IsChartView, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Inverse}">
-                        <!-- <TextBlock Text="{Binding SimulationText}" TextWrapping="Wrap"/> -->
-                        <RichTextBox x:Name="ResultsSimulationRichText"
-                                     IsReadOnly="True"
-                                     FontFamily="Consolas"
-                                     BorderThickness="0"
-                                     >
-                            <i:Interaction.Behaviors>
-                                <util:RichTextBoxBindingBehavior DocumentContent="{Binding SimulationContent, Converter={StaticResource RichTextConverter}}"/>
-                            </i:Interaction.Behaviors>
-                        </RichTextBox>
-                    </ScrollViewer>
-                    <!-- Simulation Chart -->
-                    <lvc:CartesianChart x:Name="SimulationChart" Margin="5" 
-                                       Visibility="{Binding IsChartView, Converter={StaticResource BoolToVisibilityConverter}}"
-                                       LegendLocation="Top">
-                        <lvc:CartesianChart.Series>
-                            <lvc:ColumnSeries Title="Частота выпадения" Values="{Binding SimulationValues}" 
-                                             Fill="#FF4CAF50" Stroke="#FF388E3C" StrokeThickness="2"/>
-                        </lvc:CartesianChart.Series>
-                        <lvc:CartesianChart.AxisX>
-                            <lvc:Axis Title="Сумма бросков" Labels="{Binding SimulationLabels}"/>
-                        </lvc:CartesianChart.AxisX>
-                        <lvc:CartesianChart.AxisY>
-                            <lvc:Axis Title="Количество" MinValue="0"/>
-                        </lvc:CartesianChart.AxisY>
-                    </lvc:CartesianChart>
-                </Grid>
-            </GroupBox>
- 
-            <GroupBox Header="Теоретические расчеты" Grid.Column="1" Margin="5">
-                <Grid>
-                    <ScrollViewer VerticalScrollBarVisibility="Auto" 
-                                  Visibility="{Binding IsChartView, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Inverse}">
-                        <!--   <TextBlock Text="{Binding TheoryText}" TextWrapping="Wrap"/>-->
-                        <RichTextBox x:Name="ResultsTheoryRichText" 
-                                     IsReadOnly="True" 
-                                     FontFamily="Consolas" 
-                                     BorderThickness="0" 
-                                     >
-                            <i:Interaction.Behaviors>
-                                <util:RichTextBoxBindingBehavior DocumentContent="{Binding TheoryContent, Converter={StaticResource RichTextConverter}}"/>
-                            </i:Interaction.Behaviors>
-                        </RichTextBox>
-                    </ScrollViewer>
-                    <!-- Theory Chart -->
-                    <lvc:CartesianChart x:Name="TheoryChart" Margin="5" 
-                                       Visibility="{Binding IsChartView, Converter={StaticResource BoolToVisibilityConverter}}"
-                                       LegendLocation="Top">
-                        <lvc:CartesianChart.Series>
-                            <lvc:ColumnSeries Title="Теоретическая вероятность" Values="{Binding TheoryValues}" 
-                                             Fill="#FF2196F3" Stroke="#FF1976D2" StrokeThickness="2"/>
-                        </lvc:CartesianChart.Series>
-                        <lvc:CartesianChart.AxisX>
-                            <lvc:Axis Title="Сумма бросков" Labels="{Binding TheoryLabels}"/>
-                        </lvc:CartesianChart.AxisX>
-                        <lvc:CartesianChart.AxisY>
-                            <lvc:Axis Title="Вероятность" MinValue="0"/>
-                        </lvc:CartesianChart.AxisY>
-                    </lvc:CartesianChart>
-                </Grid>
-            </GroupBox>
         </Grid>
-    </Grid>
+    </materialDesign:Card>
 </Window>

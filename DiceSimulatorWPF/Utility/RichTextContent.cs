@@ -1,8 +1,4 @@
-﻿using System.Windows;
-using System.Windows.Documents;
-using System.Windows.Media;
-
-namespace DiceSimulatorWPF.Utility
+﻿namespace DiceSimulatorWPF.Utility
 {
     public class RichTextContent
     {
@@ -13,7 +9,7 @@ namespace DiceSimulatorWPF.Utility
     {
         public string Text { get; set; }
         public bool IsBold { get; set; }
-        public string Color { get; set; } // Hex color code (e.g., "#FF0000" for red)
-        public bool IsNewParagraph { get; set; } = true; // Default to new paragraph
+        public string Color { get; set; }
+        public bool IsNewParagraph { get; set; } = true;
     }
 }
